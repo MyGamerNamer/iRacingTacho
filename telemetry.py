@@ -20,31 +20,34 @@ class EngineMonitor:
             print('Could not start communication with iRacing')
             return
 
-        if self.serial_port is None:
-            print("No Arduino found")
-            return
-        else:
-            ser = serial.Serial(self.serial_port, 9600)  # replace 9600 with your baud rate if different
-            # ser = serial.Serial("COM4", 9600)  # replace 9600 with your baud rate if different
-            time.sleep(1)  # waiting for the initialization...
-            # print(ser.readline().decode().strip())  # print the initialization message from Arduino
-
         while True:
-            redline_rpm = self.sdk['DriverInfo']['DriverCarSLBlinkRPM']
-            engine_rpm = int(self.sdk['RPM'])
-            is_rev_limiter_engaged = engine_rpm >= redline_rpm
+            try:
+                if self.serial_port is None:
+                    print("No Arduino found")
+                    time.sleep(1)
+                    self.serial_port = self.find_arduino_port()
+                    continue
+                else:
+                    ser = serial.Serial(self.serial_port, 9600)  # replace 9600 with your baud rate if different
+                    time.sleep(1)  # waiting for the initialization...
 
-            # print(f"Current Engine Speed: {engine_rpm}, Rev Limiter Engaged: {is_rev_limiter_engaged}")
-            is_rev_limiter_engaged = engine_rpm >= redline_rpm
+                while True:
+                    redline_rpm = self.sdk['DriverInfo']['DriverCarSLBlinkRPM']
+                    engine_rpm = int(self.sdk['RPM'])
+                    is_rev_limiter_engaged = engine_rpm >= redline_rpm
 
-            # print(f"Current Engine Speed: {engine_rpm}, Rev Limiter Engaged: {is_rev_limiter_engaged}")
+                    # Send data to Arduino
+                    data_to_send = f"Engine RPM: {engine_rpm}, Rev Limiter Engaged: {is_rev_limiter_engaged}\n"
+                    ser.write(data_to_send.encode())
+                    ser.flush()
 
-            # Send data to Arduino
-            data_to_send = f"Engine RPM: {engine_rpm}, Rev Limiter Engaged: {is_rev_limiter_engaged}\n"
-            ser.write(data_to_send.encode())
-            ser.flush()
+                    # time.sleep(0.01)  # Delay for stability
 
-            # time.sleep(0.01)  # Delay for stability
+            except serial.SerialException:
+                print("Connection lost... Attempting to reconnect.")
+                time.sleep(1)
+                self.serial_port = self.find_arduino_port()
+                continue
 
 if __name__ == "__main__":
     monitor = EngineMonitor()
