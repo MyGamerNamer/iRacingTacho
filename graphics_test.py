@@ -16,8 +16,8 @@ canvas.pack()
 
 # Function to calculate needle end point
 def calculate_needle_position(rpm, offset=200):
-    # Convert the rpm to an angle (7 o'clock is 210 degrees, 5 o'clock is 330 degrees)
-    angle = ((rpm / max_rpm) * 120) - 30
+    # Convert the rpm to an angle (7 o'clock is 210 degrees, 5 o'clock is 30 degrees)
+    angle = ((rpm / max_rpm) * 240) + 150  # Adjusting angle calculation here
 
     # Convert angle to radians
     radian_angle = math.radians(angle)
@@ -37,11 +37,6 @@ draw.ellipse((50, 50, 450, 450), outline="white")
 
 # Draw tick marks
 for rpm in range(0, max_rpm + 1, 1000):
-    # start_x, start_y = calculate_needle_position(rpm)
-    # end_x, end_y = calculate_needle_position(rpm, 220)
-    # draw.line((start_x, start_y, end_x, end_y), fill="white")
-
-    # Draw extra ticks reflected over a line tangent to the circle
     start_x, start_y = calculate_needle_position(rpm, 180)
     end_x, end_y = calculate_needle_position(rpm, 160)
     draw.line((start_x, start_y, end_x, end_y), fill="white")
