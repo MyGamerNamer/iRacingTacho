@@ -1,3 +1,6 @@
+import tkinter as tk
+import math
+from PIL import Image, ImageDraw, ImageTk
 import irsdk
 import time
 import serial
@@ -7,6 +10,13 @@ class EngineMonitor:
     def __init__(self):
         self.sdk = irsdk.IRSDK()
         self.serial_port = self.find_arduino_port()
+
+        # Create a new Tkinter window
+        self.window = tk.Tk()
+
+        # Create a canvas to draw on
+        self.canvas = tk.Canvas(self.window, width=500, height=500)
+        self.canvas.pack()
 
     def find_arduino_port(self):
         ports = list(serial.tools.list_ports.comports())
@@ -32,7 +42,7 @@ class EngineMonitor:
                     time.sleep(1)  # waiting for the initialization...
 
                 while True:
-                    redline_rpm = self.sdk['DriverInfo']['DriverCarSLBlinkRPM']
+                    redline_rpm = int(self.sdk['DriverInfo']['DriverCarSLBlinkRPM'])
                     engine_rpm = int(self.sdk['RPM'])
                     is_rev_limiter_engaged = engine_rpm >= redline_rpm
 
@@ -41,6 +51,9 @@ class EngineMonitor:
                     ser.write(data_to_send.encode())
                     ser.flush()
 
+                    # Generate new tachometer image with current engine RPM
+                    self.draw_tachometer(engine_rpm, redline_rpm)
+
                     # time.sleep(0.01)  # Delay for stability
 
             except serial.SerialException:
@@ -48,6 +61,53 @@ class EngineMonitor:
                 time.sleep(1)
                 self.serial_port = self.find_arduino_port()
                 continue
+
+    def calculate_needle_position(self, rpm, max_rpm, offset=200):
+        # Convert the rpm to an angle (6 o'clock is 270 degrees, 3 o'clock is 0 degrees)
+        angle = ((rpm / max_rpm) * 270) + 180 + 30
+
+        # Convert angle to radians
+        radian_angle = math.radians(angle)
+
+        # Calculate the end point of the needle
+        end_x = 250 + offset * math.cos(radian_angle)
+        end_y = 250 + offset * math.sin(radian_angle)
+
+        return end_x, end_y
+
+    def draw_tachometer(self, current_rpm, redline_rpm):
+        # Create a new image with PIL
+        image = Image.new("RGB", (500, 500))
+        draw = ImageDraw.Draw(image)
+
+        # Draw a circle for the tachometer
+        draw.ellipse((50, 50, 450, 450), outline="white")
+
+        # Calculate max RPM for gauge scale
+        max_rpm = redline_rpm + 2000
+
+        # Draw tick marks
+        for rpm in range(0, max_rpm + 1, 1000):
+            start_x, start_y = self.calculate_needle_position(rpm, max_rpm, 200)
+            end_x, end_y = self.calculate_needle_position(rpm, max_rpm, 175)
+            draw.line((start_x, start_y, end_x, end_y), fill="white")
+
+        # Draw min and max RPM labels
+        draw.text(self.calculate_needle_position(0, max_rpm, 240), "0", fill="white")
+        draw.text(self.calculate_needle_position(max_rpm, max_rpm, 240), str(max_rpm), fill="white")
+
+        # Calculate needle position
+        needle_x, needle_y = self.calculate_needle_position(current_rpm, max_rpm)
+
+        # Draw a line for the needle
+        draw.line((250, 250, needle_x, needle_y), fill="red", width=2)
+
+        # Convert PIL Image to Tkinter PhotoImage and add it to the canvas
+        photo = ImageTk.PhotoImage(image)
+        self.canvas.create_image(0, 0, image=photo, anchor=tk.NW)
+
+        # Update the Tkinter window
+        self.window.update()
 
 if __name__ == "__main__":
     monitor = EngineMonitor()
