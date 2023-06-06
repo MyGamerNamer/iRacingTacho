@@ -41,9 +41,9 @@ void loop() {
     if (is_rev_limiter_engaged) {
       lcd.print("Rev Limiter: ON");
       digitalWrite(ledPin, HIGH); // turn the LED on
-      delay(500); // wait for half a second
+      delay(15); // wait for half a second
       digitalWrite(ledPin, LOW); // turn the LED off
-      delay(500); // wait for half a second
+      delay(15); // wait for half a second
     } else {
       lcd.print("Rev Limiter: OFF");
       digitalWrite(ledPin, LOW); // turn the LED off
