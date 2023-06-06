@@ -1,6 +1,6 @@
 import tkinter as tk
 import math
-from PIL import Image, ImageDraw, ImageTk
+from PIL import Image, ImageDraw, ImageTk, ImageFont
 import irsdk
 import time
 import serial
@@ -42,7 +42,7 @@ class EngineMonitor:
                     time.sleep(1)  # waiting for the initialization...
 
                 while True:
-                    redline_rpm = int(self.sdk['DriverInfo']['DriverCarSLBlinkRPM'])
+                    redline_rpm = self.sdk['DriverInfo']['DriverCarSLBlinkRPM']
                     engine_rpm = int(self.sdk['RPM'])
                     is_rev_limiter_engaged = engine_rpm >= redline_rpm
 
@@ -64,7 +64,7 @@ class EngineMonitor:
 
     def calculate_needle_position(self, rpm, max_rpm, offset=200):
         # Convert the rpm to an angle (6 o'clock is 270 degrees, 3 o'clock is 0 degrees)
-        angle = ((rpm / max_rpm) * 270) + 180 + 30
+        angle = ((rpm / max_rpm) * 300) + 150
 
         # Convert angle to radians
         radian_angle = math.radians(angle)
@@ -80,21 +80,30 @@ class EngineMonitor:
         image = Image.new("RGB", (500, 500))
         draw = ImageDraw.Draw(image)
 
+        # Create font object
+        font = ImageFont.truetype("arial", 12)
+
         # Draw a circle for the tachometer
         draw.ellipse((50, 50, 450, 450), outline="white")
 
-        # Calculate max RPM for gauge scale
-        max_rpm = redline_rpm + 2000
+        # Calculate max RPM for gauge scale, round up to the nearest thousand
+        max_rpm = math.ceil((redline_rpm + 2000) / 1000) * 1000
 
-        # Draw tick marks
+        # Draw tick marks and labels
         for rpm in range(0, max_rpm + 1, 1000):
             start_x, start_y = self.calculate_needle_position(rpm, max_rpm, 200)
             end_x, end_y = self.calculate_needle_position(rpm, max_rpm, 175)
-            draw.line((start_x, start_y, end_x, end_y), fill="white")
+            draw.line((start_x, start_y, end_x, end_y), fill="red" if rpm > redline_rpm else "white")
+            label_x, label_y = self.calculate_needle_position(rpm, max_rpm, 165)  # adjust offset here
+            draw.text((label_x, label_y), str(rpm), fill="white", font=font)
 
-        # Draw min and max RPM labels
-        draw.text(self.calculate_needle_position(0, max_rpm, 240), "0", fill="white")
-        draw.text(self.calculate_needle_position(max_rpm, max_rpm, 240), str(max_rpm), fill="white")
+        # Draw shorter tick marks
+        for rpm in range(0, max_rpm + 1, 250):  # adjust this value for different tick spacing
+            if rpm % 1000 == 0:  # we already drew these ticks
+                continue
+            start_x, start_y = self.calculate_needle_position(rpm, max_rpm, 200)
+            end_x, end_y = self.calculate_needle_position(rpm, max_rpm, 187.5)  # adjust this value for different tick length
+            draw.line((start_x, start_y, end_x, end_y), fill="red" if rpm > redline_rpm else "white")
 
         # Calculate needle position
         needle_x, needle_y = self.calculate_needle_position(current_rpm, max_rpm)
@@ -108,6 +117,8 @@ class EngineMonitor:
 
         # Update the Tkinter window
         self.window.update()
+
+
 
 if __name__ == "__main__":
     monitor = EngineMonitor()
