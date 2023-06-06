@@ -1,29 +1,13 @@
 #include <LiquidCrystal.h>
-#include <Encoder.h>
-
 // Initialize the library with the numbers of the interface pins
 // (D7=12, D6=11, D5=10, D4=9, Enable=3, RS=2)
 LiquidCrystal lcd(2, 3, 9, 10, 11, 12);
 
 const int ledPin = 13; // LED connected to digital pin 13
 
-// Rotary Encoder Inputs
-#define ENCODER_PIN_A 2
-#define ENCODER_PIN_B 3
-#define ENCODER_SWITCH 4
-
-Encoder myEnc(ENCODER_PIN_A, ENCODER_PIN_B);
-
 void setup() {
   Serial.begin(9600);
-
   lcd.begin(16, 2);  // initialize the lcd for 16 chars 2 lines, turn on backlight
-
-  // setting up the inputs for the rotary encoder
-  pinMode(ENCODER_PIN_A, INPUT_PULLUP);
-  pinMode(ENCODER_PIN_B, INPUT_PULLUP);
-  pinMode(ENCODER_SWITCH, INPUT_PULLUP);
-
   lcd.setCursor(0, 0); // move cursor to beginning of first line
   lcd.print("TACH Initialized.");
   lcd.setCursor(0, 1); // move cursor to beginning of first line
