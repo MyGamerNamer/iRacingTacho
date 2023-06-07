@@ -21,7 +21,8 @@ class EngineMonitor:
     def find_arduino_port(self):
         ports = list(serial.tools.list_ports.comports())
         for p in ports:
-            if p.vid == 0x2341 and p.pid == 0x0042:  # replace with your board's VID and PID
+            # if p.vid == 0x2341 and p.pid == 0x0042:  # replace with your board's VID and PID
+            if p.vid == 0x2341 and p.pid == 0x8057:  # VID and PID for Arduino Nano 33 IoT
                 return p.device
         return None
 

@@ -1,20 +1,24 @@
-#include <LiquidCrystal.h>
-LiquidCrystal lcd(2, 3, 9, 10, 11, 12);
+#include <Adafruit_GFX.h>    // Include Adafruit graphics library
+#include <Adafruit_ST7735.h> // Include Adafruit ST7735 TFT library
+#include <SPI.h>
 
-const int ledPin = 13; // LED connected to digital pin 13
-const int buttonUp = 7; // Button to go to next page
-const int buttonDown = 8; // Button to go to previous page
+#define TFT_CLK 13  // Set TFT_CLK to digital pin 13
+#define TFT_MISO 12 // Set TFT_MISO to digital pin 12
+#define TFT_MOSI 11 // Set TFT_MOSI to digital pin 11
+#define TFT_CS   10 // Set TFT_CS to digital pin 10
+#define TFT_RST  9  // Set TFT_RST to digital pin 9
+#define TFT_DC   8  // Set TFT_DC to digital pin 8
 
-int currentPage = 0;
-int totalPages = 3; // Total number of pages
+#define LED_PIN  7  // LED on pin 7
+
+Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_CLK, TFT_RST);
 
 void setup() {
   Serial.begin(9600);
-  lcd.begin(16, 2);
+  tft.initR(INITR_BLACKTAB); // Initialize TFT display
+  tft.fillScreen(ST7735_BLACK); // Clear screen
 
-  pinMode(ledPin, OUTPUT);
-  pinMode(buttonUp, INPUT_PULLUP); // Enable internal pull-up resistor
-  pinMode(buttonDown, INPUT_PULLUP); // Enable internal pull-up resistor
+  pinMode(LED_PIN, OUTPUT);
 }
 
 void loop() {
@@ -34,32 +38,21 @@ void loop() {
 
     bool is_rev_limiter_engaged = (revLimiterStatus == "True");
 
-    lcd.clear();
-    if (currentPage == 0) {
-      lcd.setCursor(0, 0);
-      lcd.print("RPM: ");
-      lcd.print(engine_rpm);
-      lcd.setCursor(0, 1);
-      if (is_rev_limiter_engaged) {
-        lcd.print("Rev Limiter: ON");
-      } else {
-        lcd.print("Rev Limiter: OFF");
-      }
-    } else if (currentPage == 1) {
-      lcd.setCursor(0, 0);
-      lcd.print("Demo Page 2");
-    } else if (currentPage == 2) {
-      lcd.setCursor(0, 0);
-      lcd.print("Demo Page 3");
-    }
-  }
+    tft.fillScreen(ST7735_BLACK); // Clear screen
 
-  // Check if buttons are pressed
-  if (digitalRead(buttonUp) == LOW) {
-    currentPage = (currentPage + 1) % totalPages;
-    delay(200); // Debounce delay
-  } else if (digitalRead(buttonDown) == LOW) {
-    currentPage = (currentPage - 1 + totalPages) % totalPages;
-    delay(200); // Debounce delay
+    tft.setCursor(20, 50); // Adjust these values to center text
+    tft.setTextColor(ST7735_WHITE);
+    tft.setTextSize(2);  // Increase text size
+    tft.print("RPM: ");
+    tft.println(engine_rpm);
+
+    tft.setCursor(20, 70); // Adjust these values to center text
+    if (is_rev_limiter_engaged) {
+      tft.println("Rev Limiter: ON");
+      digitalWrite(LED_PIN, HIGH);
+    } else {
+      tft.println("Rev Limiter: OFF");
+      digitalWrite(LED_PIN, LOW);
+    }
   }
 }
