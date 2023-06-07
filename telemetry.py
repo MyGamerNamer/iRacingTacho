@@ -54,7 +54,7 @@ class EngineMonitor:
                     ser.flush()
 
                     # Generate new tachometer image with current engine RPM
-                    self.draw_tachometer(engine_rpm, redline_rpm)
+                    # self.draw_tachometer(engine_rpm, redline_rpm)
 
                     # time.sleep(0.01)  # Delay for stability
 
