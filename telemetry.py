@@ -21,7 +21,6 @@ class EngineMonitor:
     def find_arduino_port(self):
         ports = list(serial.tools.list_ports.comports())
         for p in ports:
-            # if p.vid == 0x2341 and p.pid == 0x0042:  # replace with your board's VID and PID
             if p.vid == 0x2341 and p.pid == 0x8057:  # VID and PID for Arduino Nano 33 IoT
                 return p.device
         return None
@@ -47,8 +46,10 @@ class EngineMonitor:
                     engine_rpm = int(self.sdk['RPM'])
                     is_rev_limiter_engaged = engine_rpm >= redline_rpm
 
+                    max_rpm = math.ceil((redline_rpm + 2000) / 1000) * 1000
+
                     # Send data to Arduino
-                    data_to_send = f"Engine RPM: {engine_rpm}, Rev Limiter Engaged: {is_rev_limiter_engaged}\n"
+                    data_to_send = f"{engine_rpm},{redline_rpm},{is_rev_limiter_engaged}\n"
                     ser.write(data_to_send.encode())
                     ser.flush()
 
@@ -118,8 +119,6 @@ class EngineMonitor:
 
         # Update the Tkinter window
         self.window.update()
-
-
 
 if __name__ == "__main__":
     monitor = EngineMonitor()
