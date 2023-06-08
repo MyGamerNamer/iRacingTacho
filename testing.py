@@ -11,7 +11,7 @@ def find_pi_zero_port():
 if __name__ == "__main__":
     port = find_pi_zero_port()
     if port is None:
-        print("No Raspberry Pi Zero found.")
+        print("No suitable serial port found.")
     else:
         # Open the serial port. Replace 9600 with your baud rate if different
         ser = serial.Serial(port, 9600)
