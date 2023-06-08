@@ -1,34 +1,36 @@
 import serial
 import serial.tools.list_ports
+import time
 
-def find_port():
+def find_host_system_port():
     ports = list(serial.tools.list_ports.comports())
     for p in ports:
+        # Assuming the host system shows up as a generic USB or ACM port
         if "ACM" in p.device or "USB" in p.device:
             return p.device
     return None
 
-if __name__ == "__main__":
-    port = find_port()
-    if port is None:
-        print("No suitable serial port found.")
-    else:
-        # Open the serial port. Replace 9600 with your baud rate if different
-        ser = serial.Serial(port, 9600)
-        print("Opened port", port)
-
-        # Main loop
-        while True:
-            try:
-                # Read data from the serial port
-                data = ser.readline()
-
-                # Decode the data and remove trailing white spaces
-                data = data.decode().strip()
-
-                # Print the data
+# This function opens the serial port and listens for incoming data
+def read_serial_data(serial_port):
+    ser = serial.Serial(serial_port, 9600, timeout=0)  # replace 9600 with your baud rate if different
+    while True:
+        try:
+            data = ser.readline().decode('utf-8').strip()  # read data from serial
+            # port and strip line endings
+            if data:
                 print(data)
+        except KeyboardInterrupt:
+            print("Interrupted, closing...")
+            break
+        except serial.SerialException:
+            print("Serial connection lost. Reconnecting...")
+            time.sleep(1)
+            continue
 
-            except serial.SerialException:
-                print("Connection lost... Attempting to reconnect.")
-                ser = serial.Serial(port, 9600)
+if __name__ == "__main__":
+    host_port = find_host_system_port()
+    if host_port:
+        print(f"Found host system on port {host_port}")
+        read_serial_data(host_port)
+    else:
+        print("No suitable serial port found.")
