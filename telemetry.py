@@ -40,15 +40,15 @@ class EngineMonitor:
 
         while True:
             try:
-                if self.serial_port is None:
-                    print("No Arduino found")
-                    time.sleep(1)
-                    # self.serial_port = self.find_arduino_port()
-                    self.serial_port = self.find_pi_zero_port()
-                    continue
-                else:
-                    ser = serial.Serial(self.serial_port, 9600)  # replace 9600 with your baud rate if different
-                    time.sleep(1)  # waiting for the initialization...
+                # if self.serial_port is None:
+                #     print("No Arduino found")
+                #     time.sleep(1)
+                #     # self.serial_port = self.find_arduino_port()
+                #     self.serial_port = self.find_pi_zero_port()
+                #     continue
+                # else:
+                #     ser = serial.Serial(self.serial_port, 9600)  # replace 9600 with your baud rate if different
+                #     time.sleep(1)  # waiting for the initialization...
 
                 while True:
                     redline_rpm = self.sdk['DriverInfo']['DriverCarSLBlinkRPM']
@@ -59,13 +59,14 @@ class EngineMonitor:
 
                     # Send data to Arduino
                     data_to_send = f"{engine_rpm},{redline_rpm},{is_rev_limiter_engaged}\n"
-                    ser.write(data_to_send.encode())
-                    ser.flush()
+                    # ser.write(data_to_send.encode())
+                    # ser.flush()
 
                     # Generate new tachometer image with current engine RPM
                     # self.draw_tachometer(engine_rpm, redline_rpm)
 
                     # time.sleep(0.01)  # Delay for stability
+                    print(data_to_send)
 
             except serial.SerialException:
                 print("Connection lost... Attempting to reconnect.")
