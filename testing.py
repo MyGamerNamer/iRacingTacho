@@ -1,15 +1,15 @@
 import serial
 import serial.tools.list_ports
 
-def find_pi_zero_port():
+def find_port():
     ports = list(serial.tools.list_ports.comports())
     for p in ports:
-        if "ACM" in p.device or "USB" in p.device:  # Raspberry Pi Zero will appear as ttyACM* or ttyUSB*
+        if "ACM" in p.device or "USB" in p.device:
             return p.device
     return None
 
 if __name__ == "__main__":
-    port = find_pi_zero_port()
+    port = find_port()
     if port is None:
         print("No suitable serial port found.")
     else:
