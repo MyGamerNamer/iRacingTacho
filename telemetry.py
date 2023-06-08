@@ -9,7 +9,8 @@ import serial.tools.list_ports
 class EngineMonitor:
     def __init__(self):
         self.sdk = irsdk.IRSDK()
-        self.serial_port = self.find_arduino_port()
+        # self.serial_port = self.find_arduino_port()
+        self.serial_port = self.find_pi_zero_port()
 
         # Create a new Tkinter window
         self.window = tk.Tk()
@@ -25,6 +26,13 @@ class EngineMonitor:
                 return p.device
         return None
 
+    def find_pi_zero_port(self):
+        ports = list(serial.tools.list_ports.comports())
+        for p in ports:
+            if "ACM" in p.device or "USB" in p.device:  # Raspberry Pi Zero will appear as ttyACM* or ttyUSB*
+                return p.device
+        return None
+
     def get_engine_data(self):
         if not self.sdk.startup():
             print('Could not start communication with iRacing')
@@ -35,7 +43,8 @@ class EngineMonitor:
                 if self.serial_port is None:
                     print("No Arduino found")
                     time.sleep(1)
-                    self.serial_port = self.find_arduino_port()
+                    # self.serial_port = self.find_arduino_port()
+                    self.serial_port = self.find_pi_zero_port()
                     continue
                 else:
                     ser = serial.Serial(self.serial_port, 9600)  # replace 9600 with your baud rate if different
@@ -61,7 +70,8 @@ class EngineMonitor:
             except serial.SerialException:
                 print("Connection lost... Attempting to reconnect.")
                 time.sleep(1)
-                self.serial_port = self.find_arduino_port()
+                # self.serial_port = self.find_arduino_port()
+                self.serial_port = self.find_pi_zero_port()
                 continue
 
     def calculate_needle_position(self, rpm, max_rpm, offset=200):
