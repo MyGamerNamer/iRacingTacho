@@ -16,6 +16,7 @@
 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
+// bool initialized = false;
 int prev_engine_rpm = -1;
 int prev_redline_rpm = -1;
 int prev_max_rpm = -1;
@@ -30,13 +31,8 @@ void setup() {
   tft.setTextWrap(false);
 }
 
-void drawTicksAndLabels(int redline_rpm, int max_rpm) {
-  if (redline_rpm != prev_redline_rpm || max_rpm != prev_max_rpm) {
-    tft.fillScreen(ST7735_BLACK);
+void drawTicks(int redline_rpm, int max_rpm, bool rev_limiter_engaged) {
     tft.drawCircle(TFT_CENTER_X, TFT_CENTER_Y, 60, ST7735_WHITE);
-    prev_redline_rpm = redline_rpm;
-    prev_max_rpm = max_rpm;
-
     for (int rpm = 0; rpm <= max_rpm; rpm += 1000) {
       float angle = map(rpm, max_rpm, 0, 135, -135) - 90;
       float radian_angle = angle * PI / 180.0;
@@ -52,12 +48,31 @@ void drawTicksAndLabels(int redline_rpm, int max_rpm) {
       int text_x = TFT_CENTER_X + 48 * cos(radian_angle);
       int text_y = TFT_CENTER_Y + 48 * sin(radian_angle);
 
+    }
+}
+
+void drawLabels(int redline_rpm, int max_rpm) {
+//   if (redline_rpm != prev_redline_rpm || max_rpm != prev_max_rpm) {
+//     tft.fillScreen(ST7735_BLACK);
+//     tft.drawCircle(TFT_CENTER_X, TFT_CENTER_Y, 60, ST7735_WHITE);
+    prev_redline_rpm = redline_rpm;
+    prev_max_rpm = max_rpm;
+
+    for (int rpm = 0; rpm <= max_rpm; rpm += 1000) {
+      float angle = map(rpm, max_rpm, 0, 135, -135) - 90;
+      float radian_angle = angle * PI / 180.0;
+      int start_x = TFT_CENTER_X + 60 * cos(radian_angle);
+      int start_y = TFT_CENTER_Y + 60 * sin(radian_angle);
+      int end_x = TFT_CENTER_X + 55 * cos(radian_angle);
+      int end_y = TFT_CENTER_Y + 55 * sin(radian_angle);
+      int text_x = TFT_CENTER_X + 48 * cos(radian_angle);
+      int text_y = TFT_CENTER_Y + 48 * sin(radian_angle);
       tft.setCursor(text_x, text_y);
       tft.setTextColor(rpm > redline_rpm ? ST7735_RED : ST7735_WHITE);
       tft.setTextSize(1);
       tft.print(rpm / 1000);
     }
-  }
+//   }
 }
 
 void drawNeedle(int engine_rpm, int max_rpm) {
@@ -81,17 +96,26 @@ void drawNeedle(int engine_rpm, int max_rpm) {
   }
 }
 
-void loop() {
-  while (Serial.available()) {
+void drawAll(){
     String data = Serial.readStringUntil('\n');
     int firstCommaIndex = data.indexOf(",");
+    int secondCommaIndex = data.indexOf(",", firstCommaIndex+1);
     String engine_rpm_string = data.substring(0, firstCommaIndex);
     int engine_rpm = engine_rpm_string.toInt();
     String redline_rpm_string = data.substring(firstCommaIndex+1, data.indexOf(",", firstCommaIndex+1));
     int redline_rpm = redline_rpm_string.toInt();
-    int max_rpm = ceil((redline_rpm + 2000) / 1000) * 1000;
+    String rev_limiter_engaged_str = data.substring(secondCommaIndex+1, data.indexOf(",", secondCommaIndex+1));
+    bool rev_limiter_engaged = rev_limiter_engaged_str == "True"; // Assuming '1' for true and '0' for false
 
-    drawTicksAndLabels(redline_rpm, max_rpm);
+    int max_rpm = ceil((redline_rpm + 2000) / 1000) * 1000;
+    drawTicks(redline_rpm, max_rpm, rev_limiter_engaged);
     drawNeedle(engine_rpm, max_rpm);
+    drawLabels(redline_rpm,max_rpm);
+//     initialized = true;
+}
+
+void loop() {
+  while (Serial.available()) {
+    drawAll();
   }
 }
