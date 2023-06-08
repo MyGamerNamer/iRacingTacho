@@ -1,34 +1,34 @@
-import pygame
-import sys
+import serial
+import serial.tools.list_ports
 
-# Initialize Pygame
-pygame.init()
+def find_pi_zero_port():
+    ports = list(serial.tools.list_ports.comports())
+    for p in ports:
+        if "ACM" in p.device or "USB" in p.device:  # Raspberry Pi Zero will appear as ttyACM* or ttyUSB*
+            return p.device
+    return None
 
-# Set the dimensions of the window
-window_size = (800, 600)
-screen = pygame.display.set_mode(window_size)
+if __name__ == "__main__":
+    port = find_pi_zero_port()
+    if port is None:
+        print("No Raspberry Pi Zero found.")
+    else:
+        # Open the serial port. Replace 9600 with your baud rate if different
+        ser = serial.Serial(port, 9600)
+        print("Opened port", port)
 
-# Main loop
-done = False
-clock = pygame.time.Clock()
+        # Main loop
+        while True:
+            try:
+                # Read data from the serial port
+                data = ser.readline()
 
-while not done:
-    for event in pygame.event.get():
-        # Quit the Pygame window when the QUIT event or keydown event of ESC key occurs
-        if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
-            done = True
+                # Decode the data and remove trailing white spaces
+                data = data.decode().strip()
 
-    # Fill the screen with white
-    screen.fill((255, 255, 255))
+                # Print the data
+                print(data)
 
-    # Draw a red square
-    pygame.draw.rect(screen, (255, 0, 0), pygame.Rect(30, 30, 60, 60))
-
-    # Update the full display surface
-    pygame.display.flip()
-
-    # Limit to 60 frames per second
-    clock.tick(60)
-
-pygame.quit()
-sys.exit()
+            except serial.SerialException:
+                print("Connection lost... Attempting to reconnect.")
+                ser = serial.Serial(port, 9600)
