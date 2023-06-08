@@ -32,7 +32,13 @@ void setup() {
 }
 
 void drawTicks(int redline_rpm, int max_rpm, bool rev_limiter_engaged) {
-    tft.drawCircle(TFT_CENTER_X, TFT_CENTER_Y, 60, ST7735_WHITE);
+    static unsigned long lastUpdateTime = 0;
+
+    bool draw_flash = rev_limiter_engaged && (millis() - lastUpdateTime) > 700;
+    uint16_t TEST = draw_flash ? ST7735_RED : ST7735_WHITE;
+
+
+    tft.drawCircle(TFT_CENTER_X, TFT_CENTER_Y, 60, TEST);
     for (int rpm = 0; rpm <= max_rpm; rpm += 1000) {
       float angle = map(rpm, max_rpm, 0, 135, -135) - 90;
       float radian_angle = angle * PI / 180.0;
@@ -43,11 +49,19 @@ void drawTicks(int redline_rpm, int max_rpm, bool rev_limiter_engaged) {
       int end_x = TFT_CENTER_X + 55 * cos(radian_angle);
       int end_y = TFT_CENTER_Y + 55 * sin(radian_angle);
 
-      tft.drawLine(start_x, start_y, end_x, end_y, rpm > redline_rpm ? ST7735_RED : ST7735_WHITE);
+        if(rpm >= redline_rpm){
+            tft.drawLine(start_x, start_y, end_x, end_y, ST7735_RED);
+        } else {
+            tft.drawLine(start_x, start_y, end_x, end_y, TEST);
+        }
 
       int text_x = TFT_CENTER_X + 48 * cos(radian_angle);
       int text_y = TFT_CENTER_Y + 48 * sin(radian_angle);
 
+    }
+
+    if(draw_flash){
+    lastUpdateTime = millis();
     }
 }
 
